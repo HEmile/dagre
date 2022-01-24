@@ -499,6 +499,17 @@ function runLayout(g, time) {
   time("    insertSelfEdges",        function() { insertSelfEdges(g); });
   time("    adjustCoordinateSystem", function() { coordinateSystem.adjust(g); });
   time("    position",               function() { position(g); });
+  // Fix sometimes not assigning x position for whatever reason.
+  // Gives mediocre results, but better to bandaid fix it than no result at all
+  // TODO: Should try to figure out why it even gives these undefined results.
+  _.forEach(g.nodes(), function(n) {
+    var node = g.node(n);
+    if (!node.x && node.x !== 0) {
+      node.x = 0;
+      console.log(n);
+      console.log("Missing x coordinate, might give poor results.");
+    }
+  });
   time("    positionSelfEdges",      function() { positionSelfEdges(g); });
   time("    removeBorderNodes",      function() { removeBorderNodes(g); });
   time("    normalize.undo",         function() { normalize.undo(g); });
@@ -2053,6 +2064,10 @@ function horizontalCompaction(g, layering, root, align, reverseSep) {
   // First pass, assign smallest coordinates
   function pass1(elem) {
     xs[elem] = blockG.inEdges(elem).reduce(function(acc, e) {
+      if(!xs[e.v]) {
+        // EMILE: this one can be undefined sometimes for some reason.
+        xs[e.v] = 0;
+      }
       return Math.max(acc, xs[e.v] + blockG.edge(e));
     }, 0);
   }
@@ -2157,7 +2172,15 @@ function balance(xss, align) {
       return xss[align.toLowerCase()][v];
     } else {
       var xs = _.sortBy(_.map(xss, v));
-      return (xs[1] + xs[2]) / 2;
+      var xs1 = xs[1];
+      var xs2 = xs[2];
+      if (!xs2 && xs2 !== 0) {
+        return xs1 / 2;
+      }
+      if (!xs1 && xs1 !== 0) {
+        return xs2 / 2;
+      }
+      return (xs1 + xs2) / 2;
     }
   });
 }
