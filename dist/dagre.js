@@ -547,6 +547,11 @@ function updateInputGraph(inputGraph, layoutGraph) {
     var inputLabel = inputGraph.edge(e);
     var layoutLabel = layoutGraph.edge(e);
 
+    if (!layoutLabel) {
+      // Random crash I sometimes got...
+      return;
+    }
+
     inputLabel.points = layoutLabel.points;
     if (_.has(layoutLabel, "x")) {
       inputLabel.x = layoutLabel.x;
